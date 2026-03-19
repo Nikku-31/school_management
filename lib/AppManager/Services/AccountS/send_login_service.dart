@@ -3,16 +3,16 @@ import 'package:http/http.dart' as http;
 import '../../../Model/AccountM/send_login_model.dart';
 
 class SendLoginService {
-  static const String _url =
-      "https://login.amarshikshasadan.com/api/AuthApi/login";
+  static const String _url = "https://login.amarshikshasadan.com/api/AuthApi/login";
 
   static Future<SendLoginResponse> login(
       SendLoginRequest request) async {
 
-    final uri = Uri.parse(_url);
+    // ✅ Request body me set kar rahe hain (logic same hai)
 
-    print("🔹 LOGIN API URL: $uri");
-    print("🔹 REQUEST BODY: ${jsonEncode(request.toJson())}");
+    final uri = Uri.parse(_url);
+    print(" LOGIN API URL: $uri");
+    print("REQUEST BODY: ${jsonEncode(request.toJson())}");
 
     final response = await http.post(
       uri,

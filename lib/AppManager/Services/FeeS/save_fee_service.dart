@@ -8,10 +8,8 @@ class SaveFeeService {
     final url = Uri.parse('https://login.amarshikshasadan.com/api/FeeApi/SaveFeeCollection');
     final requestBody = jsonEncode(request.toJson());
 
-    debugPrint("==================== API REQUEST ====================");
     debugPrint("URI: $url");
     debugPrint("PAYLOAD: $requestBody");
-    debugPrint("====================================================");
 
     try {
       final response = await http.post(
@@ -23,10 +21,8 @@ class SaveFeeService {
         body: requestBody,
       );
 
-      debugPrint("==================== API RESPONSE ====================");
       debugPrint("STATUS CODE: ${response.statusCode}");
       debugPrint("BODY: ${response.body}");
-      debugPrint("======================================================");
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

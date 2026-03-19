@@ -5,7 +5,7 @@ import '../../../Model/HomeWorkM/hw_model.dart';
 class HwService {
   Future<List<HwModel>> fetchHomework() async {
     final uri = Uri.parse(
-        "https://login.amarshikshasadan.com/api/StudentApi/GetStudentHomework?classId=1&SectionId=1");
+        "https://login.amarshikshasadan.com/api/StudentApi/GetStudentHomework?classId=1&SectionId=1&Date=2026-02-25T00%3A00%3A00");
 
     print("REQUEST URL: $uri");
 

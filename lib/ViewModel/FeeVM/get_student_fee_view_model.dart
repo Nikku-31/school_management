@@ -9,22 +9,26 @@ class StudentFeeViewModel extends ChangeNotifier {
   double totalPayable = 0.0;
   int baseFeeYear = 0;
   bool isAlreadyPaid = false; // New flag for UI
+  double previousBalance = 0.0;
 
   Future<void> getFees(int admissionNo, int month) async {
     isLoading = true;
     isAlreadyPaid = false;
     feeList = [];
     totalPayable = 0.0;
+    previousBalance = 0.0;
     notifyListeners();
-
     try {
       final response = await StudentFeeService.fetchFees(admissionNo, month);
-      baseFeeYear = response.feeYear;
+      baseFeeYear = response.feeYear as int;
 
       if (response.data.isNotEmpty && response.data[0].status == "ALREADY_PAID") {
         isAlreadyPaid = true;
       } else {
         feeList = response.data;
+        if(feeList.isNotEmpty){
+          previousBalance = feeList.first.previousBalance;
+        }
         totalPayable = feeList.fold(0, (sum, item) => sum + (item.feeAmount ?? 0.0));
       }
     } catch (e) {

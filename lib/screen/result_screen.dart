@@ -1,33 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class ResultScreen extends StatefulWidget {
-  const ResultScreen({super.key});
+class Result extends StatefulWidget {
+  const Result({super.key});
+
   @override
-  State<ResultScreen> createState() => _ResultScreenState();
+  State<Result> createState() => _ResultState();
 }
-class _ResultScreenState extends State<ResultScreen> {
+
+class _ResultState extends State<Result> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: Text(
-          "Result",
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,),
-        ),
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFFAB47BC), Color(0xFF42A5F5)],
+        appBar: AppBar(
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: Text("Result",
+              style: GoogleFonts.poppins(
+                  color: Colors.white, fontWeight: FontWeight.w600)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  colors: [Color(0xFFAB47BC), Color(0xFF42A5F5)]),
             ),
           ),
         ),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -73,9 +72,7 @@ Widget resultCard({
     child: Container(
       padding: const EdgeInsets.all(1),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFAB47BC), Color(0xFF42A5F5)],
-        ),
+        color: Colors.blue,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Card(
@@ -129,9 +126,9 @@ Widget resultCard({
                 child: Text(
                   "View",
                   style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14),
                 ),
               ),
             ),

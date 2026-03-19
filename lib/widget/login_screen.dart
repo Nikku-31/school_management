@@ -5,7 +5,7 @@ import '../ViewModel/AccountVM/send_login_viewModel.dart';
 import '../screen/forgot_password.dart';
 import 'app_button.dart';
 import 'dashbord_screen.dart';
-
+import 'package:firebase_messaging/firebase_messaging.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -19,13 +19,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   bool _obscurePassword = true;
 
+  Future<String> getDeviceToken() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    String? token = await messaging.getToken();
+    return token ?? "";
+  }
   @override
   void dispose() {
     userIdController.dispose();
     passwordController.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -248,7 +252,6 @@ class _LoginScreenState extends State<LoginScreen> {
       validator: validator,
     );
   }
-
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.redAccent));
   }

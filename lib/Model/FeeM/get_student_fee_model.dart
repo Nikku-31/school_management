@@ -9,10 +9,7 @@ class StudentFeeResponse {
     return StudentFeeResponse(
       success: json['success'] ?? false,
       feeYear: json['feeYear'] ?? 0,
-      data: (json['data'] as List?)
-          ?.map((i) => FeeData.fromJson(i))
-          .toList() ??
-          [],
+      data: (json['data'] as List?)?.map((i) => FeeData.fromJson(i)).toList() ?? [],
     );
   }
 }
@@ -28,6 +25,7 @@ class FeeData {
   final String feeName;
   final double feeAmount;
   final String status;
+  final double previousBalance;
 
   FeeData({
     required this.studentId,
@@ -40,6 +38,7 @@ class FeeData {
     required this.feeName,
     required this.feeAmount,
     required this.status,
+    required this.previousBalance,
   });
 
   factory FeeData.fromJson(Map<String, dynamic> json) {
@@ -55,6 +54,8 @@ class FeeData {
       // Safely convert to double to prevent "type 'double' is not a subtype of type 'int'"
       feeAmount: (json['feeAmount'] ?? 0).toDouble(),
       status: json['status'] ?? '',
+        previousBalance:
+        (json['previousBalance'] as num?)?.toDouble() ?? 0.0 ,
     );
   }
 }

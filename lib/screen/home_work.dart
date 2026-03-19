@@ -14,7 +14,7 @@ class HomeWork extends StatefulWidget {
 class _HomeWorkState extends State<HomeWork> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-
+  CalendarFormat _calendarFormat = CalendarFormat.week;
   @override
   void initState() {
     super.initState();
@@ -22,14 +22,20 @@ class _HomeWorkState extends State<HomeWork> {
       Provider.of<HwViewModel>(context, listen: false).getHomework();
     });
   }
+  String getMonthName(int month) {
+    const months = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+    return months[month - 1];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<HwViewModel>(
       builder: (context, vm, child) {
 
-        final filteredHomework =
-        vm.filterByDate(_selectedDay);
+        final filteredHomework = vm.filterByDate(_selectedDay);
 
         return Scaffold(
           backgroundColor: Colors.white,
@@ -53,51 +59,86 @@ class _HomeWorkState extends State<HomeWork> {
           ),
           body: Column(
             children: [
+
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "${getMonthName(_focusedDay.month)} ${_focusedDay.year}",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _calendarFormat =
+                        _calendarFormat == CalendarFormat.week
+                            ? CalendarFormat.month
+                            : CalendarFormat.week;
+                      });
+                    },
+                    child: Icon(
+                      _calendarFormat == CalendarFormat.week
+                          ? Icons.keyboard_arrow_down
+                          : Icons.keyboard_arrow_up,
+                      size: 26,
+                    ),
+                  ),
+                ],
+              ),
               // Calendar
               Padding(
                 padding: const EdgeInsets.all(12),
-                child: Card(
-                  color: Colors.white,
-                  child: TableCalendar(
-                    firstDay: DateTime.utc(2001),
-                    lastDay: DateTime.utc(2030),
-                    focusedDay: _focusedDay,
-                    selectedDayPredicate: (day) {
-                      return isSameDay(_selectedDay, day);
-                    },
-                    onDaySelected: (selectedDay, focusedDay) {
-                      setState(() {
-                        _selectedDay = selectedDay;
-                        _focusedDay = focusedDay;
-                      });
-                      //api call
-                      Provider.of<HwViewModel>(context,listen: false).getHomework();
-                    },
-                    calendarStyle: CalendarStyle(
-                      selectedDecoration: BoxDecoration(
-                        color: Color(0xFF42A5F5),
-                        shape: BoxShape.circle,
-                      ),
-                      todayDecoration: BoxDecoration(
-                        color: Color(0xFFAB47BC),
-                        shape: BoxShape.circle,
-                      ),
-                      todayTextStyle: const TextStyle(color: Colors.white),
+                child: TableCalendar(
+                  firstDay: DateTime.utc(2001),
+                  lastDay: DateTime.utc(2030),
+                  focusedDay: _focusedDay,
+                  headerVisible: false,
+                  calendarFormat: _calendarFormat,
+
+                  onPageChanged: (focusedDay) {
+                    setState(() {
+                      _focusedDay = focusedDay;
+                    });
+                  },
+
+                  selectedDayPredicate: (day) {
+                    return isSameDay(_selectedDay, day);
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDay = selectedDay;
+                      _focusedDay = focusedDay;
+                    });
+                    //api call
+                    Provider.of<HwViewModel>(context,listen: false).getHomework();
+                  },
+                  calendarStyle:  CalendarStyle(
+                    selectedDecoration: BoxDecoration(
+                      color: Color(0xFF42A5F5),
+                      shape: BoxShape.circle,
                     ),
-                    headerStyle: HeaderStyle(
-                      titleCentered: true,
-                      formatButtonVisible: false,
-                      titleTextStyle: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    todayDecoration: BoxDecoration(
+                      color: Color(0xFFAB47BC),
+                      shape: BoxShape.circle,
+                    ),
+                    todayTextStyle:  TextStyle(color: Colors.white),
+                  ),
+                  headerStyle: HeaderStyle(
+                    titleCentered: true,
+                    formatButtonVisible: false,
+                    titleTextStyle: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-
               const SizedBox(height: 10),
-
               // Homework List
               Expanded(
                 child: vm.isLoading
@@ -112,11 +153,11 @@ class _HomeWorkState extends State<HomeWork> {
                   itemCount: filteredHomework.length,
                   itemBuilder: (context, index) {
                     final hw = filteredHomework[index];
-
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       child: Card(
+                        color: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius:
                           BorderRadius.circular(14),

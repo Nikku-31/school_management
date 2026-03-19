@@ -1,13 +1,16 @@
 class SendLoginRequest {
   final String username;
   final String password;
+  final String deviceToken;
 
-  SendLoginRequest({required this.username, required this.password});
+  SendLoginRequest({required this.username, required this.password, required this.deviceToken,});
 
   Map<String, dynamic> toJson() {
     return {
       "username": username,
       "password": password,
+      "deviceType":"Android",
+      "deviceToken":deviceToken,
     };
   }
 }

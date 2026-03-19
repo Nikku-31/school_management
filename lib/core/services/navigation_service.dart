@@ -1,145 +1,89 @@
-import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import '../../widget/dashbord_screen.dart';
+import 'package:flutter/material.dart';
 
 class NotificationService {
-  final FirebaseMessaging messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _local =
   FlutterLocalNotificationsPlugin();
 
-  // Get device FCM token and send to backend
-  Future<void> updateTokenToBackend(int userId) async {
-    String? token = await messaging.getToken();
-    print("🔑 FCM Token: $token");
+  static const AndroidNotificationChannel _channel =
+  AndroidNotificationChannel(
+    'high_importance_channel',
+    'High Importance Notifications',
+    description: 'This channel is used for important notifications.',
+    importance: Importance.max,
+  );
 
-    if (token != null && token.isNotEmpty) {
-      // TODO: Call your specific API here to save the token
-      // Example:
-      // await customerService.updateFcmToken(userId, token);
+  Future<void> init(BuildContext context) async {
+    // Local notification init
+    const AndroidInitializationSettings androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      // For now, let's just simulate the logic your backend developer wants:
-      print("🚀 Sending Token to Backend for User $userId...");
-    }
-  }
+    const InitializationSettings settings =
+    InitializationSettings(android: androidSettings);
 
-  // Request notification permission
-  void requestNotificationPermission() async {
-    NotificationSettings settings = await messaging.requestPermission(
+    await _local.initialize(settings);
+
+    await _local
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_channel);
+
+    // Permission
+    NotificationSettings permission =
+    await _messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('✅ User granted permission');
-    } else {
-      print('❌ Notification permission denied');
-    }
-  }
+    print("✅ Permission: ${permission.authorizationStatus}");
 
-  // Get device FCM token
-  Future<String> getDeviceToken() async {
-    String? token = await messaging.getToken();
-    print("🔑 FCM Token: $token");
-    return token ?? '';
-  }
+    // Token
+    String? token = await _messaging.getToken();
+    print("🔑 FCM TOKEN: $token");
 
-  // Firebase messaging initialization
-  void firebaseInit(BuildContext context) {
+    // Foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      RemoteNotification? notification = message.notification;
+      print("📩 FOREGROUND MESSAGE RECEIVED");
+      print("DATA: ${message.data}");
+      print("NOTIFICATION: ${message.notification}");
 
-      if (kDebugMode) {
-        print("📩 Notification title: ${notification?.title}");
-        print("📩 Notification body: ${notification?.body}");
-      }
+      String title =
+          message.notification?.title ?? message.data['title'] ?? "";
+      String body =
+          message.notification?.body ?? message.data['body'] ?? "";
 
-      if (Platform.isIOS) {
-        iosForegroundMessage();
-      } else if (Platform.isAndroid) {
-        initLocalNotification(context, message);
-        showNotification(message);
+      if (title.isNotEmpty || body.isNotEmpty) {
+        showNotification(title, body);
       }
+    });
+
+    // When app opened from notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("📲 Notification Clicked");
     });
   }
 
-  // Local notification setup
-  Future<void> initLocalNotification(BuildContext context, RemoteMessage message) async {
-    // Change ic_notification to @mipmap/ic_launcher
-    const AndroidInitializationSettings androidInitSettings =
-    AndroidInitializationSettings("@mipmap/ic_launcher");
-
-    const DarwinInitializationSettings iosInitSettings = DarwinInitializationSettings();
-    const InitializationSettings initializationSettings = InitializationSettings(
-      android: androidInitSettings,
-      iOS: iosInitSettings,
-    );
-
-    await _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
-        handleMessage(context, message);
-      },
-    );
-  }
-
-  Future<void> showNotification(RemoteMessage message) async {
-    AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      "default_channel",
-      "Default Channel",
-      importance: Importance.max, // Set to max for heads-up notification
+  Future<void> showNotification(String title, String body) async {
+    const AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      'high_importance_channel',
+      'High Importance Notifications',
+      importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      icon: "@mipmap/ic_launcher",
     );
 
-    DarwinNotificationDetails iosDetails = const DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
+    const NotificationDetails details =
+    NotificationDetails(android: androidDetails);
 
-    NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    _flutterLocalNotificationsPlugin.show(
-      0,
-      message.notification?.title ?? '',
-      message.notification?.body ?? '',
+    await _local.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title,
+      body,
       details,
-    );
-  }
-
-  // Handle notification tap
-  Future<void> setupInteractMessage(BuildContext context) async {
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      handleMessage(context, message);
-    });
-
-    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
-    if (initialMessage != null && initialMessage.data.isNotEmpty) {
-      handleMessage(context, initialMessage);
-    }
-  }
-
-  Future<void> handleMessage(BuildContext context, RemoteMessage message) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => DashboardScreen()),
-    );
-  }
-
-  // iOS foreground notifications
-  Future<void> iosForegroundMessage() async {
-    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
     );
   }
 }

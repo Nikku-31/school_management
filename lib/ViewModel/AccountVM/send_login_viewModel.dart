@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,7 @@ class SendLoginViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   Student? student;
+
 
   /// ✅ CALL THIS IN DASHBOARD OR PROFILE INIT
   Future<void> loadSavedProfile() async {
@@ -33,7 +35,15 @@ class SendLoginViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = SendLoginRequest(username: username, password: password);
+      // ✅ Get FCM Token
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      debugPrint("FCM TOKEN: $fcmToken");
+
+      final request = SendLoginRequest(
+        username: username,
+        password: password,
+        deviceToken: fcmToken ?? "deviceToken",
+      );
       final response = await SendLoginService.login(request);
 
       // If API says login failed

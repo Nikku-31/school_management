@@ -29,6 +29,7 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
   late TextEditingController feePayableController;
   late TextEditingController feePaidController;
   late TextEditingController balanceController;
+  late TextEditingController previousBalance;
 
   String? selectedMonth;
   List<int> pendingMonthsToPay = [];
@@ -66,6 +67,7 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     feePayableController = TextEditingController();
     feePaidController = TextEditingController(text: "0");
     balanceController = TextEditingController();
+    previousBalance=TextEditingController();
   }
 
   void _updateUI(dynamic student) {
@@ -89,55 +91,86 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     setState(() => feeVM.isLoading = true);
 
     try {
-      for (int i = 0; i < academicCycle.length; i++) {
-        int monthNum = academicCycle[i];
-        await feeVM.getFees(detailVM.student!.admissionNo, monthNum);
+      // Get current month integer (e.g., March = 3)
+      int currentMonthInt = DateTime.now().month;
 
-        if (!feeVM.isAlreadyPaid) {
-          for (int j = i; j < fullMonthsList.length; j++) {
-            tempAvailable.add(fullMonthsList[j]);
-          }
-          break;
-        }
-      }
+      // Fetch fees for ONLY the current month
+      await feeVM.getFees(detailVM.student!.admissionNo, currentMonthInt);
 
       setState(() {
-        availableMonths = tempAvailable;
+        if (!feeVM.isAlreadyPaid) {
+          // Set availableMonths to just the current month string
+          String currentMonthStr = _getCurrentMonthString();
+          availableMonths = [currentMonthStr];
+          selectedMonth = currentMonthStr;
+
+          // Update the payment list to contain ONLY this month
+          pendingMonthsToPay = [currentMonthInt];
+        } else {
+          availableMonths = [];
+        }
+
         if (availableMonths.isNotEmpty) {
-          selectedMonth = availableMonths.first;
           _calculatePendingRange(selectedMonth!);
         }
       });
     } catch (e) {
-      debugPrint("Error filtering months: $e");
+      debugPrint("Error fetching current month: $e");
     } finally {
       setState(() => feeVM.isLoading = false);
     }
   }
-
-  /// Calculates total payable based on number of months in range
+  // Calculates total payable based on number of months in range
+  // void _calculatePendingRange(String selection) {
+  //   final feeVM = context.read<StudentFeeViewModel>();
+  //
+  //   int targetMonthNum = _getMonthNumber(selection);
+  //   List<int> academicCycle = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+  //   int startMonthNum = _getMonthNumber(availableMonths.first);
+  //
+  //   int startIndex = academicCycle.indexOf(startMonthNum);
+  //   int endIndex = academicCycle.indexOf(targetMonthNum);
+  //
+  //   pendingMonthsToPay = academicCycle.sublist(startIndex, endIndex + 1);
+  //
+  //   //  Monthly total
+  //   double monthlyTotal =
+  //       feeVM.totalPayable * pendingMonthsToPay.length;
+  //
+  //   //  Previous balance
+  //  double prevBal = feeVM.previousBalance;
+  //   //  Final total
+  //   double finalTotal = monthlyTotal + prevBal;
+  //
+  //   setState(() {
+  //      previousBalance.text = prevBal.toStringAsFixed(2);
+  //     feePayableController.text = finalTotal.toStringAsFixed(2);
+  //     feePaidController.text = finalTotal.toStringAsFixed(2);
+  //     balanceController.text = "0.00";
+  //   });
+  // }
   void _calculatePendingRange(String selection) {
     final feeVM = context.read<StudentFeeViewModel>();
 
-    int targetMonthNum = _getMonthNumber(selection);
-    List<int> academicCycle = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
-    int startMonthNum = _getMonthNumber(availableMonths.first);
+    // We only care about the current month now
+    int currentMonthInt = DateTime.now().month;
+    pendingMonthsToPay = [currentMonthInt];
 
-    int startIndex = academicCycle.indexOf(startMonthNum);
-    int endIndex = academicCycle.indexOf(targetMonthNum);
+    double currentMonthTotal = feeVM.feeList.fold(
+      0.0,
+          (sum, item) => sum + item.feeAmount,
+    );
 
-    pendingMonthsToPay = academicCycle.sublist(startIndex, endIndex + 1);
-
-    // Total = Per Month Total * Number of Selected Months
-    double total = feeVM.totalPayable * pendingMonthsToPay.length;
+    double prevBal = feeVM.previousBalance ?? 0.0;
+    double finalTotal = currentMonthTotal + prevBal;
 
     setState(() {
-      feePayableController.text = total.toStringAsFixed(2);
-      feePaidController.text = total.toStringAsFixed(2);
+      previousBalance.text = prevBal.toStringAsFixed(2);
+      feePayableController.text = finalTotal.toStringAsFixed(2);
+      feePaidController.text = finalTotal.toStringAsFixed(2);
       balanceController.text = "0.00";
     });
   }
-
   int _getMonthNumber(String monthStr) {
     Map<String, int> monthMap = {
       "April": 4, "May": 5, "June": 6, "July": 7, "August": 8, "September": 9,
@@ -147,6 +180,13 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
       if (monthStr.contains(month)) return monthMap[month]!;
     }
     return 4;
+  }
+  String _getCurrentMonthString() {
+    DateTime now = DateTime.now();
+    String monthName = DateFormat('MMMM').format(now);
+    int year = now.year;
+
+    return "Upto $monthName $year";
   }
 
   String _getMonthName(int n) {
@@ -158,14 +198,21 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     final detailVM = context.read<StudentDetailViewModel>();
     final saveVM = context.read<SaveFeeViewModel>();
 
+    DateTime now = DateTime.now();
+    int currentMonth = now.month;
+    int currentYear = now.year;
+
+    // Create the single month item
+    List<SelectedMonthItem> selectedMonthsRange = [
+      SelectedMonthItem(feeMonth: currentMonth, feeYear: currentYear)
+    ];
+
+    print(selectedMonth);
+
     if (detailVM.student == null || pendingMonthsToPay.isEmpty) return;
 
     // --- Prepare Request ---
     int baseYear = feeVM.baseFeeYear;
-    List<SelectedMonthItem> selectedMonthsRange = pendingMonthsToPay.map((m) {
-      int yearForThisMonth = (m >= 1 && m <= 3) ? baseYear : baseYear - 1;
-      return SelectedMonthItem(feeMonth: m, feeYear: yearForThisMonth);
-    }).toList();
 
     List<FeeDetailItem> details = feeVM.feeList.map((f) {
       return FeeDetailItem(
@@ -224,7 +271,6 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     final detailVM = context.watch<StudentDetailViewModel>();
 
     int monthCount = pendingMonthsToPay.length;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -277,16 +323,16 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
                   ),
                   const SizedBox(height: 24),
 
-                  if (!feeVM.isLoading && pendingMonthsToPay.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Text(
-                        "Paying for $monthCount months: ${pendingMonthsToPay.map((m) => _getMonthName(m)).join(', ')}",
-                        style: GoogleFonts.poppins(fontSize: 12, color: Colors.blue.shade700, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-
-                  Text("Fee Details (Total for $monthCount months)", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
+                  // if (!feeVM.isLoading && pendingMonthsToPay.isNotEmpty)
+                  //   Padding(
+                  //     padding: const EdgeInsets.only(bottom: 8.0),
+                  //     child: Text(
+                  //       "Paying for $monthCount months: ${pendingMonthsToPay.map((m) => _getMonthName(m)).join(', ')}",
+                  //       style: GoogleFonts.poppins(fontSize: 12, color: Colors.blue.shade700, fontWeight: FontWeight.w600),
+                  //     ),
+                  //   ),
+                  //
+                  // Text("Fee Details (Total for $monthCount months)", style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 10),
                   _buildTableHeader(),
 
@@ -296,16 +342,33 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
                     const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("No fee details found.")))
                   else
                   // Showing Total for each head based on month multiplier
+                  //   ...feeVM.feeList.map((fee) {
+                  //     double totalHeadFee = fee.feeAmount * monthCount;
+                  //     return PendingWidgets.feeRow(
+                  //       fee.feeName,
+                  //       totalHeadFee.toStringAsFixed(2),
+                  //       totalHeadFee.toStringAsFixed(2),
+                  //     );
+                  //   }),
                     ...feeVM.feeList.map((fee) {
-                      double totalHeadFee = fee.feeAmount * monthCount;
+
+                      double currentMonthAmount = fee.feeAmount;
+
                       return PendingWidgets.feeRow(
                         fee.feeName,
-                        totalHeadFee.toStringAsFixed(2),
-                        totalHeadFee.toStringAsFixed(2),
+                        currentMonthAmount.toStringAsFixed(2), // Total Fees
+                        currentMonthAmount.toStringAsFixed(2), // Total Actual
                       );
                     }),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(child: PendingWidgets.inputField("Previous Balance", "", filled: true, controller: previousBalance, readOnly: true,
+                      )),
 
-                  const SizedBox(height: 30),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
                   Row(
                     children: [
                       Expanded(child: PendingWidgets.inputField("Total Payable", "", filled: true, controller: feePayableController, readOnly: true)),
@@ -322,7 +385,6 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     );
   }
 
-  // --- COMPONENT WIDGETS ---
 
   Widget _buildDropdown() {
     return DropdownButtonHideUnderline(
@@ -427,7 +489,6 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
       ),
     );
   }
-
   Widget _headerText(String text) => Text(text, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600));
 
   Widget _buildShimmerLoading() {
@@ -460,6 +521,7 @@ class _FeesScreenState extends State<FeesScreen> {  // ---------------- CONTROLL
     sectionController.dispose();
     dateController.dispose();
     feePayableController.dispose();
+    previousBalance.dispose();
     feePaidController.dispose();
     balanceController.dispose();
     super.dispose();

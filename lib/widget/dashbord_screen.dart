@@ -1,4 +1,5 @@
 import 'package:app/widget/fees_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +17,6 @@ import '../screen/language.dart';
 import '../screen/news_page.dart';
 import '../screen/notification_screen.dart';
 import '../screen/pending_screen.dart';
-import '../screen/result_screen.dart';
 import '../screen/suggestion_screen.dart';
 import '../screen/syllabus_screen.dart';
 import '../screen/time_table.dart';
@@ -37,24 +37,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
   bool isMenuOpen = false;
 
-  int _notificationCount = 0;
-  final NotificationService _notificationService = NotificationService();
+  int notificationCount = 0;
+  final NotificationService notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
-    NotificationService().init(
-      onNotification: () {
-        setState(() {
-          _notificationCount++;
-        });
-      },
-    );
+    final notificationService = NotificationService();
+
+    notificationService.requestNotificationPermission();
+    notificationService.getDeviceToken();
+    notificationService.firebaseInit(context);
+    notificationService.setupInteractMessage(context);
+
+    // App opened from terminated state
+    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        _handleNotificationTap(message);
+      }
+    });
+
+    // Foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      // handle if needed
+    });
+
+    // Background notification tap
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationTap(message);
+    });
     // We use microtask or addPostFrameCallback to ensure the context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Replace 'fetchStudentDetails' with whatever your actual method name is
       Provider.of<StudentDetailViewModel>(context, listen: false).getStudentDetails();
     });
+  }
+
+  void _handleNotificationTap(RemoteMessage message) {
+    // Your UI is driven by bloc's state.currentIndex, so drive the bloc:
   }
 
   @override
@@ -229,10 +249,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: "Result",
                 icon: Icons.bar_chart,
                 bgColor: Colors.deepPurpleAccent.shade100,
-                onTap: (){
-                  Navigator.push(context, MaterialPageRoute(builder:
-                      (context)=> const ResultScreen()));
-                },
+                // onTap: (){
+                //   Navigator.push(context, MaterialPageRoute(builder:
+                //       (context)=> const ResultScreen()));
+                // },
               ),_HomeCard(
                 title: "News",
                 icon: Icons.bar_chart,
