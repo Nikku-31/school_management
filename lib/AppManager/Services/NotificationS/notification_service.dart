@@ -107,8 +107,7 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    _flutterLocalNotificationsPlugin.show(
-      0,
+    _flutterLocalNotificationsPlugin.show(0,
       message.notification?.title ?? '',
       message.notification?.body ?? '',
       details,

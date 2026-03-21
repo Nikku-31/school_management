@@ -62,17 +62,6 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final NotificationService _notificationService = NotificationService();
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _initNotifications();
-  // }
-  //
-  // /// 🔥 Initialize Notification ONCE
-  // // Future<void> _initNotifications() async {
-  // //   await _notificationService.init();
-  // // }
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

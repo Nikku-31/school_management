@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../AppManager/Services/NotificationS/notification_service.dart';
 import '../ViewModel/NewsVM/news_view_model.dart';
 import 'widgets/news_shimmer.dart';
 
